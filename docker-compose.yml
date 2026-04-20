@@ -5,7 +5,7 @@ services:
   # PostgreSQL baze
   postgres-user:
     image: postgres:15-alpine
-    container_name: postgres-user
+    container_name: booking-postgres-user
     environment:
       POSTGRES_DB: userdb
       POSTGRES_USER: postgres
@@ -22,7 +22,7 @@ services:
 
   postgres-property:
     image: postgres:15-alpine
-    container_name: postgres-property
+    container_name: booking-postgres-property
     environment:
       POSTGRES_DB: propertydb
       POSTGRES_USER: postgres
@@ -39,7 +39,7 @@ services:
 
   postgres-booking:
     image: postgres:15-alpine
-    container_name: postgres-booking
+    container_name: booking-postgres-booking
     environment:
       POSTGRES_DB: bookingdb
       POSTGRES_USER: postgres
@@ -57,7 +57,7 @@ services:
   # RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
+    container_name: booking-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -77,7 +77,7 @@ services:
     build:
       context: .
       dockerfile: user-service/Dockerfile
-    container_name: user-service
+    container_name: booking-user-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/userdb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -99,7 +99,7 @@ services:
     build:
       context: .
       dockerfile: property-service/Dockerfile
-    container_name: property-service
+    container_name: booking-property-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-property:5432/propertydb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -121,7 +121,7 @@ services:
     build:
       context: .
       dockerfile: booking-service/Dockerfile
-    container_name: booking-service
+    container_name: booking-booking-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-booking:5432/bookingdb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -149,7 +149,7 @@ services:
     build:
       context: .
       dockerfile: notification-service/Dockerfile
-    container_name: notification-service
+    container_name: booking-notification-service
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
@@ -172,7 +172,7 @@ services:
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
-    container_name: api-gateway
+    container_name: booking-api-gateway
     ports:
       - "8080:8080"
     depends_on:
@@ -188,6 +188,31 @@ services:
       timeout: 10s
       retries: 3
 
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: booking-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - booking-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: booking-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - booking-network
+    volumes:
+      - grafana-data:/var/lib/grafana
+
 networks:
   booking-network:
     driver: bridge
@@ -196,3 +221,4 @@ volumes:
   postgres-user-data:
   postgres-property-data:
   postgres-booking-data:
+  grafana-data:
