@@ -188,6 +188,31 @@ services:
       timeout: 10s
       retries: 3
 
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: booking-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - booking-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: booking-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - booking-network
+    volumes:
+      - grafana-data:/var/lib/grafana
+
 networks:
   booking-network:
     driver: bridge
@@ -196,3 +221,4 @@ volumes:
   postgres-user-data:
   postgres-property-data:
   postgres-booking-data:
+  grafana-data:
